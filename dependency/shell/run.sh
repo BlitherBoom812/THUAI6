@@ -4,6 +4,35 @@ python_main_dir=/usr/local/PlayerCode/CAPI/python
 playback_dir=/usr/local/playback
 map_dir=/usr/local/map
 
+get_current_team_label() {
+    if [ $TEAM_SEQ_ID -eq $2 ]; then
+        echo "find current team label: $1"
+        current_team_label=$1
+    fi
+}
+
+read_array() {
+    callback=$1
+    echo "read array: set callback command: $callback"
+    
+    IFS=':' read -r -a fields <<< "$2"
+
+    count=0 # loop count
+
+    for field in "${fields[@]}"
+    do
+        echo "parse field: $field"
+        param0=$field
+        
+        # call command
+        run_command="$callback $param0 $count"
+        echo "Call Command: $run_command"
+        $run_command
+
+        count=$((count+1))
+    done
+}
+
 if [ "$TERMINAL" = "SERVER" ]; then
     map_path=$map_dir/$MAP_ID.txt
     if [ $EXPOSED -eq 1 ]; then
@@ -38,20 +67,25 @@ if [ "$TERMINAL" = "SERVER" ]; then
     fi
 
 elif [ "$TERMINAL" = "CLIENT" ]; then
-    echo "Client Mode! Team Label data - $TEAM_LABEL"
+    echo "Client Mode! Team Label data - $TEAM_LABELS"
     
     # parse team label name
+    read_array get_current_team_label $TEAM_LABELS
+
     # k is an enum (1,2), 1 = STUDENT, 2 = TRICKER
-    if [ "$TEAM_LABEL" = "Student" ]; then
+    if [ "$current_team_label" = "Student" ]; then
         k=1
-    elif [ "$TEAM_LABEL" = "Tricker" ]; then
+    elif [ "$current_team_label" = "Tricker" ]; then
         k=2
+    else
+        echo "Error: Invalid Team Label"
+        exit
     fi
     pushd /usr/local/code
         if [ $k -eq 1 ]; then
             for i in {1..4}
             do
-                j=$((i - 1)) # student id from 0 to 3
+                j=$((i - 1)) # student player id from 0 to 3
                 code_name=Student$i
                 if [ -f "./$code_name.py" ]; then
                     cp -r $python_main_dir $python_main_dir$i

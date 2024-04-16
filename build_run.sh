@@ -1,0 +1,1 @@
+docker build -f dependency/Dockerfile/Dockerfile_run .
