@@ -1,1 +1,1 @@
-docker build -f dependency/Dockerfile/Dockerfile_run .
+docker build -f dependency/Dockerfile/Dockerfile_run . -t blitherboom812/thuai6_run:dev
