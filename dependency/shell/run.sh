@@ -4,6 +4,8 @@ python_main_dir=/usr/local/PlayerCode/CAPI/python
 playback_dir=/usr/local/playback
 map_dir=/usr/local/map
 
+TEAM_SEQ_ID=-1 # default value
+
 get_current_team_label() {
     if [ $TEAM_SEQ_ID -eq $2 ]; then
         echo "find current team label: $1"
@@ -67,10 +69,10 @@ if [ "$TERMINAL" = "SERVER" ]; then
     fi
 
 elif [ "$TERMINAL" = "CLIENT" ]; then
-    echo "Client Mode! Team Label data - $TEAM_LABELS"
+    echo "Client Mode! Team Label data - $TEAM_LABEL"
     
     # parse team label name
-    read_array get_current_team_label $TEAM_LABELS
+    $current_team_label=$TEAM_LABEL
 
     # k is an enum (1,2), 1 = STUDENT, 2 = TRICKER
     if [ "$current_team_label" = "Student" ]; then
