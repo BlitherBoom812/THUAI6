@@ -101,11 +101,11 @@ elif [ "$TERMINAL" = "CLIENT" ]; then
                     echo "find ./$code_name.py"
                     cp -r $python_main_dir $python_main_dir$i
                     cp -f ./$code_name.py $python_main_dir$i/PyAPI/AI.py
-                    nice -0 python3 $python_main_dir$i/PyAPI/main.py -I 127.0.0.1 -P 8888 -p $j > $playback_dir/team$k-player$j.log 2>&1 &
+                    nice -0 python3 $python_main_dir$i/PyAPI/main.py -I host.docker.internal -P $PORT -p $j > $playback_dir/team$k-player$j.log 2>&1 &
                     ps -aux |grep main.py
                 elif [ -f "./$code_name" ]; then
                     echo "find ./$code_name"
-                    nice -0 ./$code_name -I 127.0.0.1 -P 8888 -p $j > $playback_dir/team$k-player$j.log 2>&1 &
+                    nice -0 ./$code_name -I host.docker.internal -P $PORT -p $j > $playback_dir/team$k-player$j.log 2>&1 &
                     ps -aux |grep $code_name
                 else
                     echo "ERROR. $code_name is not found."
@@ -119,11 +119,11 @@ elif [ "$TERMINAL" = "CLIENT" ]; then
                 echo "find ./$code_name.py"
                 cp -r $python_main_dir $python_main_dir$i
                 cp -f ./$code_name.py $python_main_dir$i/PyAPI/AI.py
-                nice -0 python3 $python_main_dir$i/PyAPI/main.py -I 127.0.0.1 -P 8888 -p $j > $playback_dir/team$k-player$j.log 2>&1 &
+                nice -0 python3 $python_main_dir$i/PyAPI/main.py -I host.docker.internal -P $PORT -p $j > $playback_dir/team$k-player$j.log 2>&1 &
                 ps -aux |grep main.py
             elif [ -f "./$code_name" ]; then
                 echo "find ./$code_name"
-                nice -0 ./$code_name -I 127.0.0.1 -P 8888 -p $j > $playback_dir/team$k-player$j.log 2>&1 &
+                nice -0 ./$code_name -I host.docker.internal -P $PORT -p $j > $playback_dir/team$k-player$j.log 2>&1 &
                 ps -aux |grep $code_name
             else
                 echo "ERROR. $code_name is not found."
