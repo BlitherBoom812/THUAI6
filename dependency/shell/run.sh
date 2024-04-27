@@ -5,12 +5,14 @@ playback_dir=/usr/local/output
 map_dir=/usr/local/map
 mkdir -p $playback_dir
 
-TEAM_SEQ_ID=0 # default value
-EXPOSED=0
-SCORE_URL=www.baidu.com
-MODE=0
-GAME_TIME=100
-CONNECT_IP=172.17.0.1
+# set default value
+: "${TEAM_SEQ_ID:=0}"
+: "${TEAM_LABELS:=Student:Tricker}"
+: "${TEAM_LABEL:=Student}"
+: "${EXPOSED=0}"
+: "${MODE=0}"
+: "${GAME_TIME=10}"
+: "${CONNECT_IP=172.17.0.1}"
 
 get_current_team_label() {
     if [ $TEAM_SEQ_ID -eq $2 ]; then
@@ -54,8 +56,11 @@ if [ "$TERMINAL" = "SERVER" ]; then
         ls $playback_dir
     fi
     
-    echo "waiting"
-    sleep 10
+    echo "SCORE URL: $SCORE_URL"
+    echo "FINISH URL: $FINISH_URL"
+
+    echo "waiting..."
+    sleep 30
     echo "watching..."
 
     if [ -f $playback_dir/start.lock ]; then
@@ -65,10 +70,37 @@ if [ "$TERMINAL" = "SERVER" ]; then
             sleep 1
             ps -p $server_pid > /dev/null 2>&1
         done
-        # result=$(cat /usr/local/playback/result.json)
-        # score0=$(echo "$result" | grep -oP '(?<="Student":)\d+')
-        # score1=$(echo "$result" | grep -oP '(?<="Tricker":)\d+')
-        # curl $URL -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"result":[{"team_id":0, "score":'${score0}'}, {"team_id":1, "score":'${score1}'}], "mode":'${MODE}'}'> $playback_dir/send.log 2>&1
+
+        # update score by finish url
+        
+        echo "Getting result score..."
+        result=$(cat $playback_dir/result.json)
+        score0=$(echo "$result" | grep -oP '(?<="Student":)\d+') # Student score
+        score1=$(echo "$result" | grep -oP '(?<="Tricker":)\d+') # Tricker score
+        echo "Result score: Student: $score0, Tricker: $score1"
+
+        # detect two team seqs:
+        echo "Parsing TEAM_LABELS: $TEAM_LABELS"
+        TEAM_SEQ_ID=0
+        read_array get_current_team_label $TEAM_LABELS
+        if [[ "${current_team_label}" == "Student" ]]; then
+            echo "Parse Success: 1st team is Student"
+            finish_payload='{"result":[{"score":'${score0}'}, {"score":'${score1}'}]}'
+        elif [[ "${current_team_label}" == "Tricker" ]]; then
+            echo "Parse Success: 1st team is Tricker"
+            finish_payload='{"result":[{"score":'${score1}'}, {"score":'${score0}'}]}'
+        else
+            echo "Parse Failure: 1st team is Unknown"
+        fi
+        
+        if [[ -n $finish_payload ]]; then
+            echo "FINISH_URL: $FINISH_URL, payload: $finish_payload. Start update score..."
+            curl $FINISH_URL -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"result":[{"team_id":0, "score":'${score0}'}, {"team_id":1, "score":'${score1}'}], "mode":'${MODE}'}'> $playback_dir/send.log 2>&1
+        else
+            echo "Payload not set."
+        fi
+
+        # Congratulations! You have finished the competition!!!!!
         touch $playback_dir/finish.lock
         echo "Finish"
     else
@@ -85,7 +117,7 @@ elif [ "$TERMINAL" = "CLIENT" ]; then
     # parse team label name
     current_team_label=$TEAM_LABEL
 
-    # k is an enum (1,2), 1 = STUDENT, 2 = TRICKER
+    # k is an enum (1,2), 1 = Student, 2 = Tricker
     if [ "$current_team_label" = "Student" ]; then
         k=1
     elif [ "$current_team_label" = "Tricker" ]; then
