@@ -5,14 +5,22 @@ playback_dir=/usr/local/output
 map_dir=/usr/local/map
 mkdir -p $playback_dir
 
+# initialize
+if [[ "${MODE}" == "ARENA" ]]; then
+    MODE_NUM=0
+elif [[ "${MODE}" == "COMPETITION" ]]; then
+    MODE_NUM=1
+fi
+
 # set default value
 : "${TEAM_SEQ_ID:=0}"
 : "${TEAM_LABELS:=Student:Tricker}"
 : "${TEAM_LABEL:=Student}"
 : "${EXPOSED=0}"
-: "${MODE=0}"
+: "${MODE_NUM=0}"
 : "${GAME_TIME=10}"
 : "${CONNECT_IP=172.17.0.1}"
+
 
 get_current_team_label() {
     if [ $TEAM_SEQ_ID -eq $2 ]; then
@@ -46,11 +54,11 @@ read_array() {
 if [ "$TERMINAL" = "SERVER" ]; then
     map_path=$map_dir/$MAP_ID.txt
     if [ $EXPOSED -eq 1 ]; then
-        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE --mapResource $map_path --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
+        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE_NUM --mapResource $map_path --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
         server_pid=$!
     else
         echo "Run NO EXPOSED"
-        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE --mapResource $map_path --notAllowSpectator --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
+        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE_NUM --mapResource $map_path --notAllowSpectator --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
         server_pid=$!
         echo "server pid: $server_pid"
         ls $playback_dir
@@ -95,14 +103,14 @@ if [ "$TERMINAL" = "SERVER" ]; then
         
         if [[ -n $finish_payload ]]; then
             echo "FINISH_URL: $FINISH_URL, payload: $finish_payload. Start update score..."
-            curl $FINISH_URL -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"result":[{"team_id":0, "score":'${score0}'}, {"team_id":1, "score":'${score1}'}], "mode":'${MODE}'}'> $playback_dir/send.log 2>&1
+            curl $FINISH_URL -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d "${finish_payload}" > $playback_dir/send.log 2>&1
         else
             echo "Payload not set."
         fi
 
         # Congratulations! You have finished the competition!!!!!
         touch $playback_dir/finish.lock
-        echo "Finish"
+        echo "Finish!"
     else
         echo "Failed to start game."
         touch $playback_dir/finish.lock
