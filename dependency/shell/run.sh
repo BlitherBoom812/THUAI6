@@ -32,7 +32,7 @@ get_current_team_label() {
 read_array() {
     callback=$1
     echo "read array: set callback command: $callback"
-    
+
     IFS=':' read -r -a fields <<< "$2"
 
     count=0 # loop count
@@ -41,7 +41,7 @@ read_array() {
     do
         echo "parse field: $field"
         param0=$field
-        
+
         # call command
         run_command="$callback $param0 $count"
         echo "Call Command: $run_command"
@@ -63,12 +63,12 @@ if [ "$TERMINAL" = "SERVER" ]; then
         echo "server pid: $server_pid"
         ls $playback_dir
     fi
-    
+
     echo "SCORE URL: $SCORE_URL"
     echo "FINISH URL: $FINISH_URL"
 
     echo "waiting..."
-    sleep 30
+    sleep 30 # wait connection time
     echo "watching..."
 
     if [ -f $playback_dir/start.lock ]; then
@@ -80,7 +80,7 @@ if [ "$TERMINAL" = "SERVER" ]; then
         done
 
         # update score by finish url
-        
+
         echo "Getting result score..."
         result=$(cat $playback_dir/result.json)
         score0=$(echo "$result" | grep -oP '(?<="Student":)\d+') # Student score
@@ -93,14 +93,15 @@ if [ "$TERMINAL" = "SERVER" ]; then
         read_array get_current_team_label $TEAM_LABELS
         if [[ "${current_team_label}" == "Student" ]]; then
             echo "Parse Success: 1st team is Student"
-            finish_payload='{"result":[{"score":'${score0}'}, {"score":'${score1}'}]}'
+            finish_payload='{"result": {"status": "Finished", "scores": ['${score0}', '${score1}']}}'
         elif [[ "${current_team_label}" == "Tricker" ]]; then
             echo "Parse Success: 1st team is Tricker"
-            finish_payload='{"result":[{"score":'${score1}'}, {"score":'${score0}'}]}'
+            finish_payload='{"result": {"status": "Finished", "scores": ['${score1}', '${score0}']}}'
         else
             echo "Parse Failure: 1st team is Unknown"
+            finish_payload='{"result": {"status": "Crashed", "scores": [0, 0]}}'
         fi
-        
+
         if [[ -n $finish_payload ]]; then
             echo "FINISH_URL: $FINISH_URL, payload: $finish_payload. Start update score..."
             curl $FINISH_URL -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d "${finish_payload}" > $playback_dir/send.log 2>&1
@@ -109,7 +110,7 @@ if [ "$TERMINAL" = "SERVER" ]; then
         fi
 
         # Congratulations! You have finished the competition!!!!!
-        touch $playback_dir/finish.lock
+        # touch $playback_dir/finish.lock
         echo "Finish!"
     else
         echo "Failed to start game."
@@ -117,11 +118,13 @@ if [ "$TERMINAL" = "SERVER" ]; then
         touch temp.lock
         mv -f temp.lock $playback_dir/video.thuaipb
         kill -9 $server_pid
+        finish_payload='{"result": {"status": "Crashed", "scores": [0, 0]}}'
+        curl $FINISH_URL -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d "${finish_payload}" > $playback_dir/send.log 2>&1
     fi
 
 elif [ "$TERMINAL" = "CLIENT" ]; then
     echo "Client Mode! Team Label data - $TEAM_LABEL"
-    
+
     # parse team label name
     current_team_label=$TEAM_LABEL
 
