@@ -16,7 +16,7 @@ fi
 : "${TEAM_SEQ_ID:=0}"
 : "${TEAM_LABELS:=Student:Tricker}"
 : "${TEAM_LABEL:=Student}"
-: "${EXPOSED=0}"
+: "${EXPOSED=1}"
 : "${MODE_NUM=0}"
 : "${GAME_TIME=10}"
 : "${CONNECT_IP=172.17.0.1}"
@@ -53,16 +53,11 @@ read_array() {
 
 if [ "$TERMINAL" = "SERVER" ]; then
     map_path=$map_dir/$MAP_ID.txt
-    if [ $EXPOSED -eq 1 ]; then
-        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE_NUM --mapResource $map_path --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
-        server_pid=$!
-    else
-        echo "Run NO EXPOSED"
-        nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE_NUM --mapResource $map_path --notAllowSpectator --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
-        server_pid=$!
-        echo "server pid: $server_pid"
-        ls $playback_dir
-    fi
+    # allow spectator always.
+    nice -10 ./Server --port 8888 --studentCount 4 --trickerCount 1 --resultFileName $playback_dir/result --gameTimeInSecond $GAME_TIME --mode $MODE_NUM --mapResource $map_path --url $SCORE_URL --token $TOKEN --fileName $playback_dir/video --startLockFile $playback_dir/start.lock > $playback_dir/server.log 2>&1 &
+    server_pid=$!
+    echo "server pid: $server_pid"
+    ls $playback_dir
 
     echo "SCORE URL: $SCORE_URL"
     echo "FINISH URL: $FINISH_URL"
